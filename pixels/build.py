@@ -35,7 +35,7 @@ CSS_HEX = {
     "W": "#ffffff",
 }
 
-W, H = 24, 24
+W, H = 26, 26
 
 
 def blank():
@@ -78,20 +78,28 @@ def disk(g, cx, cy, r, fill="R"):
 
 
 def draw_cloud(g, stretch=0.0, wide=0.0, blink=False, lift_right=0.0, look=0):
-    """Three overlapping lobes: top, bottom-left, bottom-right. That's the avatar."""
-    top_y = 8.2 + stretch
-    disk(g, 12.0, top_y, 7.2)
-    disk(g, 7.2 - wide, 15.2 - stretch * 0.3, 6.1)
-    disk(g, 16.8 + wide, 15.2 - stretch * 0.3 - lift_right, 6.1)
+    """Five silhouette bumps: top, upper-left, upper-right, bottom-left, bottom-right."""
+    cy = 13.0 + stretch * 0.2
+    # hidden body so the five bumps stay one cloud
+    disk(g, 13.0, cy, 5.4)
+    # 1 top
+    disk(g, 13.0, 6.0 + stretch, 4.55)
+    # 2 upper-left
+    disk(g, 5.6 - wide * 0.5, 9.6 + stretch * 0.1, 4.7)
+    # 3 upper-right
+    disk(g, 20.4 + wide * 0.5, 9.6 + stretch * 0.1 - lift_right * 0.5, 4.7)
+    # 4 bottom-left
+    disk(g, 6.4 - wide, 18.4 - stretch * 0.15, 5.2)
+    # 5 bottom-right
+    disk(g, 19.6 + wide, 18.4 - stretch * 0.15 - lift_right, 5.2)
 
-    ey = int(round(top_y)) + look
-    # two vertical oval eyes, no mouth — that's the real face
+    ey = int(round(cy)) - 3 + look
     if blink:
-        for x in (9, 14):
+        for x in (10, 15):
             setp(g, x, ey + 1, "K")
             setp(g, x + 1, ey + 1, "K")
     else:
-        for x in (9, 14):
+        for x in (10, 15):
             for y in (ey - 1, ey, ey + 1):
                 setp(g, x, y, "K")
                 setp(g, x + 1, y, "K")

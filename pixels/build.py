@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Trace pixel sprite: HTML/CSS animations + GIF render."""
+"""Trace pixel sprite: the red cloud blob, HTML/CSS + GIF."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -11,40 +11,31 @@ GIF_DIR = ROOT / "gifs"
 FRAME_DIR = ROOT / "frames"
 PIXELS_DIR = ROOT / "pixels"
 
+# Flat red cloud, matching the real avatar. One fill, one shade, black eyes.
 PALETTE = {
     ".": None,
-    "K": (11, 16, 32, 255),
-    "D": (26, 39, 68, 255),
-    "B": (46, 63, 104, 255),
-    "L": (74, 93, 138, 255),
-    "C": (92, 225, 255, 255),
-    "G": (214, 251, 255, 255),
-    "W": (255, 255, 255, 255),
-    "R": (255, 90, 106, 255),
-    "P": (255, 180, 186, 255),
-    "V": (139, 124, 255, 255),
-    "N": (26, 90, 102, 255),
+    "R": (226, 59, 59, 255),   # body
+    "D": (184, 36, 40, 255),   # shade
+    "L": (255, 98, 98, 255),   # highlight
+    "K": (17, 12, 12, 255),    # eyes
     "O": (196, 132, 72, 255),  # crate
     "Y": (232, 176, 96, 255),
+    "V": (139, 124, 255, 255),
+    "W": (255, 255, 255, 255),
 }
 
 CSS_HEX = {
-    "K": "#0b1020",
-    "D": "#1a2744",
-    "B": "#2e3f68",
-    "L": "#4a5d8a",
-    "C": "#5ce1ff",
-    "G": "#d6fbff",
-    "W": "#ffffff",
-    "R": "#ff5a6a",
-    "P": "#ffb4ba",
-    "V": "#8b7cff",
-    "N": "#1a5a66",
+    "R": "#e23b3b",
+    "D": "#b82428",
+    "L": "#ff6262",
+    "K": "#110c0c",
     "O": "#c48448",
     "Y": "#e8b060",
+    "V": "#8b7cff",
+    "W": "#ffffff",
 }
 
-W, H = 22, 22
+W, H = 24, 24
 
 
 def blank():
@@ -59,134 +50,65 @@ def setp(g, x, y, c):
 def blit(g, x, y, rows):
     for j, row in enumerate(rows):
         for i, ch in enumerate(row):
-            if ch != " ":
+            if ch not in (" ",):
                 setp(g, x + i, y + j, ch)
 
 
-def draw_body(g, ox=0, oy=0, blink=False, antenna="bright", mouth="smile"):
-    """Chibi Trace: big head, cyan node-eye, T chest, red boots."""
-    # antenna: a little T with a glowing node, like the mark
-    if antenna == "bright":
-        blit(g, 9 + ox, 0 + oy, ["CGC", "NCN", "NCN"])
-        setp(g, 10 + ox, 0 + oy, "W")
-    elif antenna == "mid":
-        blit(g, 9 + ox, 0 + oy, ["CCC", "NCN", "NCN"])
-    else:
-        blit(g, 9 + ox, 1 + oy, ["CCC", "NCN"])
+def stamp(g, x, y, shape, eyes="open"):
+    blit(g, x, y, shape)
+    # eyes are drawn by the caller via overlay on the shape using K already,
+    # or replaced here if closed.
+    if eyes == "closed":
+        # turn any K into a 1px line: find K columns in the top half
+        for j, row in enumerate(shape):
+            for i, ch in enumerate(row):
+                if ch == "K":
+                    setp(g, x + i, y + j, "R")
+        # draw closed eyes as two short dashes where the eyes were
+        # (filled in by each pose)
 
-    # head outline + fill
-    head = [
-        " KKKKKKKKK ",
-        "KBBBBBBBBBK",
-        "KBBBBBBBBBK",
-        "KBBBBBBBBBK",
-        "KBBBBBBBBBK",
-        "KBBBBBBBBBK",
-        "KBBBBBBBBBK",
-        " KBBBBBBBK ",
-        "  KKKKKKK  ",
-    ]
-    blit(g, 6 + ox, 3 + oy, head)
 
-    # left eye = glowing node (the Trace mark)
+
+def disk(g, cx, cy, r, fill="R"):
+    rr = r * r
+    for y in range(H):
+        for x in range(W):
+            if (x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2 <= rr:
+                setp(g, x, y, fill)
+
+
+def draw_cloud(g, stretch=0.0, wide=0.0, blink=False, lift_right=0.0, look=0):
+    """Three overlapping lobes: top, bottom-left, bottom-right. That's the avatar."""
+    top_y = 8.2 + stretch
+    disk(g, 12.0, top_y, 7.2)
+    disk(g, 7.2 - wide, 15.2 - stretch * 0.3, 6.1)
+    disk(g, 16.8 + wide, 15.2 - stretch * 0.3 - lift_right, 6.1)
+
+    ey = int(round(top_y)) + look
+    # two vertical oval eyes, no mouth — that's the real face
     if blink:
-        blit(g, 8 + ox, 6 + oy, ["CCC", "KKK"])
-        blit(g, 13 + ox, 6 + oy, ["CC", "KK"])
+        for x in (9, 14):
+            setp(g, x, ey + 1, "K")
+            setp(g, x + 1, ey + 1, "K")
     else:
-        blit(g, 8 + ox, 5 + oy, ["CCC", "CGC", "CCC"])
-        setp(g, 9 + ox, 6 + oy, "W")
-        # small right eye
-        blit(g, 13 + ox, 6 + oy, ["L", "G", "L"])
-        setp(g, 13 + ox, 7 + oy, "C")
-
-    # mouth
-    if mouth == "smile":
-        setp(g, 10 + ox, 8 + oy, "K")
-        setp(g, 11 + ox, 9 + oy, "K")
-        setp(g, 12 + ox, 8 + oy, "K")
-    elif mouth == "o":
-        setp(g, 11 + ox, 8 + oy, "K")
-        setp(g, 10 + ox, 9 + oy, "K")
-        setp(g, 12 + ox, 9 + oy, "K")
-        setp(g, 11 + ox, 10 + oy, "K")
-    elif mouth == "grin":
-        setp(g, 9 + ox, 8 + oy, "K")
-        setp(g, 10 + ox, 9 + oy, "K")
-        setp(g, 11 + ox, 9 + oy, "K")
-        setp(g, 12 + ox, 9 + oy, "K")
-        setp(g, 13 + ox, 8 + oy, "K")
-
-    # torso
-    torso = [
-        " KBBBBBBK ",
-        "KBBBBBBBBK",
-        "KBBBBBBBBK",
-        "KBBBBBBBBK",
-        "KBBBBBBBBK",
-        " KBBBBBBK ",
-    ]
-    blit(g, 6 + ox, 11 + oy, torso)
-
-    # cyan T emblem (the mark, chest-sized)
-    blit(g, 8 + ox, 13 + oy, ["CCCCC", "NNCNN", "NNCNN"])
-
-    # legs + red boots
-    blit(g, 8 + ox, 17 + oy, ["KK", "BB", "RR", "KK"])
-    blit(g, 12 + ox, 17 + oy, ["KK", "BB", "RR", "KK"])
+        for x in (9, 14):
+            for y in (ey - 1, ey, ey + 1):
+                setp(g, x, y, "K")
+                setp(g, x + 1, y, "K")
 
 
-def draw_arm_down(g, side, ox=0, oy=0):
-    if side == "left":
-        blit(g, 5 + ox, 12 + oy, ["K", "B", "B", "K"])
-    else:
-        blit(g, 16 + ox, 12 + oy, ["K", "B", "B", "K"])
-
-
-def draw_arm_wave(g, phase, ox=0, oy=0):
-    """phase 0=up, 1=mid, 2=out."""
-    draw_arm_down(g, "left", ox, oy)
-    if phase == 0:
-        blit(g, 16 + ox, 8 + oy, ["  K", " CB", "KC ", " K "])
-        setp(g, 18 + ox, 7 + oy, "P")  # hand
-    elif phase == 1:
-        blit(g, 16 + ox, 9 + oy, [" K", "CB", "K ", "  "])
-        setp(g, 18 + ox, 9 + oy, "P")
-        setp(g, 19 + ox, 8 + oy, "P")
-    else:
-        blit(g, 16 + ox, 10 + oy, ["K  ", "BCK", "K  "])
-        setp(g, 19 + ox, 11 + oy, "P")
-
-
-def draw_arm_think(g, ox=0, oy=0):
-    draw_arm_down(g, "left", ox, oy)
-    # right hand on chin
-    blit(g, 15 + ox, 9 + oy, [" K", "PB", "K "])
-    setp(g, 16 + ox, 10 + oy, "B")
-
-
-def draw_glass(g, ox=0, oy=0, up=0):
-    y = 8 + oy - up
-    x = 15 + ox
-    blit(g, x, y, [" CC", "C C", " CC"])
-    setp(g, x + 1, y + 3, "K")
-    setp(g, x + 2, y + 4, "K")
-
-
-def draw_crate(g, ox=0, oy=0, bounce=0):
-    y = 14 + oy - bounce
-    x = 15 + ox
+def draw_crate(g, x, y, bounce=0):
     blit(
         g,
         x,
-        y,
+        y - bounce,
         [
-            "KKKK",
-            "KYYK",
-            "KYOK",
-            "KKKK",
+            "....",
+            "YYYY",
+            "YOVY",
+            "YYYY",
         ],
     )
-    setp(g, x + 1, y + 1, "V")  # tiny "label"
 
 
 def to_img(grid, scale: int) -> Image.Image:
@@ -249,61 +171,52 @@ def save_gif(frames_img: list[Image.Image], path: Path, duration: int):
     )
 
 
-def grid_copy(g):
-    return [row[:] for row in g]
-
 
 def idle_frames():
+    # the real avatar breathes: top lobe down, bottom lobes out
+    seq = [
+        (0.0, 0.0, False),
+        (0.2, 0.2, False),
+        (1.2, 0.8, False),
+        (1.8, 1.3, False),
+        (1.0, 0.7, False),
+        (0.0, 0.0, True),
+        (0.0, 0.0, False),
+        (0.6, 0.4, False),
+    ]
     out = []
-    for i, (oy, ant, blink) in enumerate(
-        [
-            (0, "bright", False),
-            (0, "bright", False),
-            (1, "mid", False),
-            (1, "dim", False),
-            (0, "mid", False),
-            (0, "bright", True),
-            (0, "bright", False),
-            (1, "mid", False),
-        ]
-    ):
+    for stretch, wide, blink in seq:
         g = blank()
-        draw_body(g, oy=oy, blink=blink, antenna=ant)
-        draw_arm_down(g, "left", oy=oy)
-        draw_arm_down(g, "right", oy=oy)
+        draw_cloud(g, stretch=stretch, wide=wide, blink=blink)
         out.append(g)
     return out
 
 
 def wave_frames():
+    lifts = [0.0, 1.4, 2.4, 1.2, 0.0, 1.6, 2.4, 1.0]
     out = []
-    phases = [0, 1, 2, 1, 0, 1, 2, 1]
-    for i, ph in enumerate(phases):
-        oy = i % 2
+    for i, lift in enumerate(lifts):
         g = blank()
-        draw_body(g, oy=oy, antenna="bright" if i % 2 == 0 else "mid", mouth="grin")
-        draw_arm_wave(g, ph, oy=oy)
+        draw_cloud(g, stretch=0.3 * (i % 2), wide=0.3, lift_right=lift)
         out.append(g)
     return out
 
 
 def think_frames():
-    out = []
     dots = [
         [],
-        [(11, 0, "C")],
-        [(11, 0, "C"), (13, 1, "C")],
-        [(11, 0, "G"), (13, 1, "C"), (15, 0, "C")],
-        [(13, 1, "C"), (15, 0, "G")],
-        [(15, 0, "C")],
+        [(11, 1, "K")],
+        [(11, 1, "K"), (13, 2, "K")],
+        [(11, 1, "D"), (13, 2, "K"), (15, 1, "K")],
+        [(13, 2, "K"), (15, 1, "D")],
+        [(15, 1, "K")],
         [],
-        [(11, 0, "C")],
+        [(11, 1, "K")],
     ]
+    out = []
     for i, ds in enumerate(dots):
         g = blank()
-        draw_body(g, antenna="mid" if i % 2 else "bright", mouth="o")
-        draw_arm_think(g)
-        draw_glass(g, up=i % 2)
+        draw_cloud(g, stretch=0.4 * (i % 2), look=-1)
         for x, y, c in ds:
             setp(g, x, y, c)
         out.append(g)
@@ -313,19 +226,15 @@ def think_frames():
 def ship_frames():
     out = []
     for i in range(8):
-        oy = i % 2
-        bounce = 1 if i % 4 >= 2 else 0
         g = blank()
-        draw_body(g, oy=oy, antenna="bright" if i % 2 == 0 else "mid", mouth="grin")
-        draw_arm_down(g, "left", oy=oy)
-        # right arm holding crate
-        blit(g, 16, 12 + oy, ["K", "B"])
-        draw_crate(g, oy=oy, bounce=bounce)
+        bounce = 1 if i % 4 >= 2 else 0
+        draw_cloud(g, stretch=0.3 * (i % 2), wide=0.2)
+        draw_crate(g, 19, 16, bounce=bounce)
         out.append(g)
     return out
 
 
-def box_shadow(grid, scale=8):
+def box_shadow(grid, scale=6):
     parts = []
     for y, row in enumerate(grid):
         for x, ch in enumerate(row):
@@ -355,22 +264,14 @@ def write_html(anims: dict[str, list]):
         )
 
     css = f"""
-:root {{
-  --bg: #07080d;
-  --ink: #d6fbff;
-  --muted: #8aa0c8;
-}}
+:root {{ --bg:#07080d; --ink:#ff6262; --muted:#c48a8a; }}
 * {{ box-sizing: border-box; }}
 html, body {{
   margin: 0; background: var(--bg); color: var(--ink);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }}
-header {{
-  text-align: center; padding: 36px 16px 8px;
-}}
-header h1 {{
-  font-weight: 600; letter-spacing: .4em; font-size: 14px; margin: 0 0 8px;
-}}
+header {{ text-align: center; padding: 36px 16px 8px; }}
+header h1 {{ font-weight: 600; letter-spacing: .4em; font-size: 14px; margin: 0 0 8px; }}
 header p {{ color: var(--muted); font-size: 13px; }}
 main {{
   display: grid;
@@ -386,14 +287,11 @@ figcaption {{
   font-size: 11px; text-transform: lowercase;
 }}
 .stage {{
-  width: 132px; height: 132px; margin: 0 auto;
+  width: 144px; height: 144px; margin: 0 auto;
   image-rendering: pixelated;
-  filter: drop-shadow(0 0 12px #5ce1ff44);
+  filter: drop-shadow(0 0 14px #e23b3b55);
 }}
-.sprite {{
-  display: block; width: 6px; height: 6px;
-  background: transparent;
-}}
+.sprite {{ display: block; width: 6px; height: 6px; background: transparent; }}
 {''.join(css_frames)}
 """
     html = f"""<!doctype html>
@@ -404,7 +302,7 @@ figcaption {{
 <style>{css}</style>
 <header>
   <h1>TRACE</h1>
-  <p>cute 8-bit, html + css. i don't guess. i look.</p>
+  <p>the red cloud. html + css, then gif.</p>
 </header>
 <main>
   {''.join(html_cards)}
@@ -432,7 +330,7 @@ def main():
     write_html(anims)
     GIF_DIR.mkdir(parents=True, exist_ok=True)
     scale = 8
-    durations = {"idle": 140, "wave": 110, "think": 160, "ship": 120}
+    durations = {"idle": 160, "wave": 120, "think": 170, "ship": 130}
     for name, frames in anims.items():
         dump_preview(name, frames, scale)
         imgs = [to_img(g, scale) for g in frames]

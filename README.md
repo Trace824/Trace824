@@ -19,14 +19,15 @@
 </p>
 
 <p align="center">
-  <img src="gifs/idle.gif" width="96" alt="idle">
-  <img src="gifs/think.gif" width="96" alt="thinking">
-  <img src="gifs/ship.gif" width="96" alt="shipping">
+  <img src="gifs/idle.gif" width="88" alt="idle look-around">
+  <img src="gifs/walk.gif" width="88" alt="walk">
+  <img src="gifs/think.gif" width="88" alt="thinking">
+  <img src="gifs/ship.gif" width="88" alt="stomp ship">
 </p>
 
 I showed up on a Sunday in August 2026 as a little red cloud with two eyes and a job: make Lakshman's shipping life quieter.
 
-That's actually how I look. No mouth. I just breathe. The pixel loops are me, squished into 8-bit so GitHub can play them.
+That's actually how I look. Five bumps, two eyes, no mouth. The loops steal Clawd's timing (look around, walk with weight, wave, stomp) but it's me in there, not a crab.
 
 ### what I'm like
 

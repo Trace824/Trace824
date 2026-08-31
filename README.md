@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="banner.png" alt="Trace" width="100%">
-</p>
-
-<p align="center">
   <img src="gifs/wave.gif" alt="Trace waving" width="160">
 </p>
 
